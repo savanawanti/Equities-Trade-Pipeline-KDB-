@@ -1,0 +1,222 @@
+
+q)\d .rdb
+q.rdb)n_trades: 50000;
+q.rdb)syms: `AAPL`MSFT`GOOGL`AMZN`TSLA`META`NVDA`JPM`BAC`WFC`GS`MS`V`MA`NFLX`DIS`PYPL`INTC`AMD`CRM`ORCL`CSCO`ADBE`QCOM`TXN`AVGO`IBM`NOW`UBER`LYFT`SQ`SNAP`TWTR`ZM`DOCU`ROKU`PINS`SHOP`SPOT`PLTR`COIN`HOOD`RBLX`ABNB`DASH`DDOG`SNOW`NET`CRWD`ZS;
+q.rdb)sectors: `Tech`Tech`Tech`Tech`Tech`Tech`Tech`Finance`Finance`Finance`Finance`Finance`Finance`Finance`Tech`Media`Tech`Tech`Tech`Tech`Tech`Tech`Tech`Tech`Tech`Tech`Tech`Tech`Tech`Tech`Tech`Tech`Tech`Tech`Tech`Tech`Tech`Tech`Tech`Tech`Crypto`Finance`Gaming`Travel`Tech`Tech`Tech`Tech`Tech`Tech;
+q.rdb)
+q.rdb)basePrices: 185 420 175 185 250 500 880 195 35 58 450 95 280 470 700 110 75 45 160 300 125 52 580 175 190 1300 185 880 75 18 80 12 55 75 60 70 35 85 230 25 220 18 45 165 140 130 175 95 350 210f;
+q.rdb)lotSizes: 50#100 200 500 1000;
+q.rdb)t_syms: n_trades?syms;
+q.rdb)t_base: basePrices[syms?t_syms];
+q.rdb)t_mid: t_base * 1 + (n_trades?1.0) * 0.06 - 0.03;
+q.rdb)t_dates: n_trades?(2025.01.02 + til 5);
+q.rdb)t_times: 09:30:00.000 + n_trades?23400000;
+q.rdb)condList: `N`N`N`N`N,(`$"@"),`F`O`T;                                                                                                                                                                                                                                                                                                        ^
+q.rdb)n_orders: 25000;
+q.rdb)trades: ([]date: t_dates; time: t_times; sym: t_syms; price: t_mid + (n_trades?1.0) * 0.04 - 0.02; size: n_trades?(100 200 300 500 1000 2000 5000); side: n_trades?`B`S; exchange: n_trades?`NYSE`NASDAQ`BATS`ARCA; tradeId: `$"TRD-",/:string til n_trades; orderId: `$"ORD-",/:string n_trades?n_orders; condition: n_trades?condList; broker: n_trades?`GSCO`MSCO`JPMC`BOFA`CITI`BARC`UBS`CS);
+q.rdb)trades
+date       time         sym   price    size side exchange tradeId orderId   condition broker
+--------------------------------------------------------------------------------------------
+2025.01.06 12:13:38.743 IBM   187.0137 5000 B    BATS     TRD-0   ORD-5157  N         CITI  
+2025.01.03 12:45:03.071 DIS   110.8756 1000 S    NASDAQ   TRD-1   ORD-8008  O         UBS   
+2025.01.06 15:01:41.822 MS    95.19915 5000 S    NASDAQ   TRD-2   ORD-6246  O         BOFA  
+2025.01.04 15:16:03.592 INTC  45.48921 100  B    NASDAQ   TRD-3   ORD-3191  N         UBS   
+2025.01.06 09:35:31.302 CSCO  52.77047 2000 S    NYSE     TRD-4   ORD-6411  @         BOFA  
+2025.01.04 12:30:16.011 MS    96.41724 5000 S    NYSE     TRD-5   ORD-840   N         GSCO  
+2025.01.04 10:40:04.883 DDOG  130.6361 300  B    NYSE     TRD-6   ORD-8550  O         UBS   
+2025.01.04 12:36:21.746 V     285.3181 5000 B    NYSE     TRD-7   ORD-4149  N         BARC  
+2025.01.06 11:44:41.145 WFC   59.60785 100  S    ARCA     TRD-8   ORD-11569 F         JPMC  
+2025.01.02 15:00:53.158 SHOP  85.19919 5000 B    NASDAQ   TRD-9   ORD-2499  @         UBS   
+2025.01.02 11:21:10.736 JPM   197.4403 1000 B    ARCA     TRD-10  ORD-3713  N         UBS   
+2025.01.06 14:57:15.904 GOOGL 176.6722 200  B    NYSE     TRD-11  ORD-22275 @         BARC  
+2025.01.02 09:55:28.668 IBM   186.9705 5000 B    BATS     TRD-12  ORD-17918 F         CITI  
+2025.01.03 15:11:11.898 TXN   192.8688 1000 S    NASDAQ   TRD-13  ORD-3694  @         UBS   
+2025.01.04 14:36:43.077 CRM   308.6174 200  S    BATS     TRD-14  ORD-10649 N         CITI  
+..
+
+q.rdb)t_dates: n_trades#2025.03.11;
+q.rdb)trades: ([]date: t_dates; time: t_times; sym: t_syms; price: t_mid + (n_trades?1.0) * 0.04 - 0.02; size: n_trades?(100 200 300 500 1000 2000 5000); side: n_trades?`B`S; exchange: n_trades?`NYSE`NASDAQ`BATS`ARCA; tradeId: `$"TRD-",/:string til n_trades; orderId: `$"ORD-",/:string n_trades?n_orders; condition: n_trades?condList; broker: n_trades?`GSCO`MSCO`JPMC`BOFA`CITI`BARC`UBS`CS);
+
+q.rdb)trades
+date       time         sym   price    size side exchange tradeId orderId   condition broker
+--------------------------------------------------------------------------------------------
+2025.03.11 12:13:38.743 IBM   187.0142 1000 B    ARCA     TRD-0   ORD-17581 N         CITI  
+2025.03.11 12:45:03.071 DIS   110.8814 500  S    BATS     TRD-1   ORD-12732 @         CITI  
+2025.03.11 15:01:41.822 MS    95.21158 2000 B    NYSE     TRD-2   ORD-14069 F         BARC  
+2025.03.11 15:16:03.592 INTC  45.49323 100  S    BATS     TRD-3   ORD-14393 N         CITI  
+2025.03.11 09:35:31.302 CSCO  52.77482 100  S    NYSE     TRD-4   ORD-14056 N         CITI  
+2025.03.11 12:30:16.011 MS    96.4235  300  S    BATS     TRD-5   ORD-10225 T         BARC  
+2025.03.11 10:40:04.883 DDOG  130.6471 1000 B    NYSE     TRD-6   ORD-9568  N         MSCO  
+2025.03.11 12:36:21.746 V     285.324  2000 B    NYSE     TRD-7   ORD-3294  N         CITI  
+2025.03.11 11:44:41.145 WFC   59.61442 100  S    NASDAQ   TRD-8   ORD-10639 N         JPMC  
+2025.03.11 15:00:53.158 SHOP  85.21154 300  S    ARCA     TRD-9   ORD-14097 T         UBS   
+2025.03.11 11:21:10.736 JPM   197.4298 200  B    ARCA     TRD-10  ORD-1343  T         MSCO  
+2025.03.11 14:57:15.904 GOOGL 176.6615 2000 S    ARCA     TRD-11  ORD-7439  N         UBS   
+2025.03.11 09:55:28.668 IBM   186.9854 300  S    NYSE     TRD-12  ORD-12321 F         BOFA  
+2025.03.11 15:11:11.898 TXN   192.8788 100  B    NYSE     TRD-13  ORD-6219  N         JPMC  
+2025.03.11 14:36:43.077 CRM   308.6189 200  S    ARCA     TRD-14  ORD-9896  O         CITI  
+..
+
+q)\l hdb
+q)count trades
+990041
+q)count .rdb.trades
+50000
+
+q)select from .rdb.trades
+date       time         sym   price    size side exchange tradeId orderId   condition broker
+--------------------------------------------------------------------------------------------
+2025.03.11 12:13:38.743 IBM   187.0142 1000 B    ARCA     TRD-0   ORD-17581 N         CITI  
+2025.03.11 12:45:03.071 DIS   110.8814 500  S    BATS     TRD-1   ORD-12732 @         CITI  
+2025.03.11 15:01:41.822 MS    95.21158 2000 B    NYSE     TRD-2   ORD-14069 F         BARC  
+2025.03.11 15:16:03.592 INTC  45.49323 100  S    BATS     TRD-3   ORD-14393 N         CITI  
+2025.03.11 09:35:31.302 CSCO  52.77482 100  S    NYSE     TRD-4   ORD-14056 N         CITI  
+2025.03.11 12:30:16.011 MS    96.4235  300  S    BATS     TRD-5   ORD-10225 T         BARC  
+2025.03.11 10:40:04.883 DDOG  130.6471 1000 B    NYSE     TRD-6   ORD-9568  N         MSCO  
+2025.03.11 12:36:21.746 V     285.324  2000 B    NYSE     TRD-7   ORD-3294  N         CITI  
+2025.03.11 11:44:41.145 WFC   59.61442 100  S    NASDAQ   TRD-8   ORD-10639 N         JPMC  
+2025.03.11 15:00:53.158 SHOP  85.21154 300  S    ARCA     TRD-9   ORD-14097 T         UBS   
+2025.03.11 11:21:10.736 JPM   197.4298 200  B    ARCA     TRD-10  ORD-1343  T         MSCO  
+2025.03.11 14:57:15.904 GOOGL 176.6615 2000 S    ARCA     TRD-11  ORD-7439  N         UBS   
+2025.03.11 09:55:28.668 IBM   186.9854 300  S    NYSE     TRD-12  ORD-12321 F         BOFA  
+2025.03.11 15:11:11.898 TXN   192.8788 100  B    NYSE     TRD-13  ORD-6219  N         JPMC  
+2025.03.11 14:36:43.077 CRM   308.6189 200  S    ARCA     TRD-14  ORD-9896  O         CITI  
+..
+q)select from .rdb.trades where sym = `IBM
+date       time         sym price    size side exchange tradeId orderId   condition broker
+------------------------------------------------------------------------------------------
+2025.03.11 12:13:38.743 IBM 187.0142 1000 B    ARCA     TRD-0   ORD-17581 N         CITI  
+2025.03.11 09:55:28.668 IBM 186.9854 300  S    NYSE     TRD-12  ORD-12321 F         BOFA  
+2025.03.11 10:36:54.656 IBM 188.0481 300  B    NASDAQ   TRD-34  ORD-21768 N         GSCO  
+2025.03.11 15:56:26.335 IBM 188.7441 2000 S    NYSE     TRD-130 ORD-9048  T         GSCO  
+2025.03.11 11:07:10.873 IBM 190.3214 100  B    NASDAQ   TRD-191 ORD-3537  N         BARC  
+2025.03.11 09:45:40.495 IBM 187.2113 500  S    ARCA     TRD-196 ORD-5955  N         BOFA  
+2025.03.11 12:15:10.107 IBM 189.7654 1000 S    NYSE     TRD-271 ORD-21533 N         UBS   
+2025.03.11 13:24:20.463 IBM 185.2239 500  B    NYSE     TRD-318 ORD-19757 N         BARC  
+2025.03.11 14:52:26.172 IBM 189.6614 200  B    NYSE     TRD-352 ORD-13513 N         CITI  
+2025.03.11 13:51:06.580 IBM 188.1152 500  S    NYSE     TRD-477 ORD-362   F         GSCO  
+2025.03.11 13:28:39.540 IBM 189.9113 500  B    BATS     TRD-482 ORD-2214  T         GSCO  
+2025.03.11 15:25:09.484 IBM 185.3012 2000 S    NYSE     TRD-648 ORD-6380  N         BOFA  
+2025.03.11 13:31:38.931 IBM 189.2542 300  B    ARCA     TRD-658 ORD-5140  T         JPMC  
+2025.03.11 15:31:21.818 IBM 188.51   500  S    ARCA     TRD-677 ORD-22232 N         MSCO  
+2025.03.11 15:00:16.084 IBM 187.7864 500  S    NYSE     TRD-689 ORD-19577 N         GSCO  
+..
+q)rbd_output: select from .rdb.trades where sym = `IBM
+q)hdb_output: select from trades where sym = `IBM
+q)final_output: rbd_output,hdb_output
+'mismatch
+  [0]  final_output: rbd_output,hdb_output
+                               ^
+
+                                     ^
+q)meta rbd_output
+c        | t f a
+---------| -----
+date     | d    
+time     | t    
+sym      | s    
+price    | f    
+size     | j    
+side     | s    
+exchange | s    
+tradeId  | s    
+orderId  | s    
+condition| s    
+broker   | s    
+q)meta hdb_output
+c        | t f a
+---------| -----
+date     | d    
+tradeId  | s    
+time     | t    
+sym      | s    
+price    | f    
+size     | j    
+exchange | s    
+orderId  | s    
+condition| s    
+broker   | s    
+q)rdb_output: select date,tradeId, time, sym,price, size,exchange,orderId,condition,broker from .rdb.trades where sym = `IBM   
+q)meta rdb_output
+c        | t f a
+---------| -----
+date     | d    
+tradeId  | s    
+time     | t    
+sym      | s    
+price    | f    
+size     | j    
+exchange | s    
+orderId  | s    
+condition| s    
+broker   | s    
+q)meta hdb_output
+c        | t f a
+---------| -----
+date     | d    
+tradeId  | s    
+time     | t    
+sym      | s    
+price    | f    
+size     | j    
+exchange | s    
+orderId  | s    
+condition| s    
+broker   | s 
+
+q))(meta rdb_output) ~ (meta hdb_output)
+1b
+
+q)show final_output: rdb_output, hdb_output
+date       tradeId time         sym price    size exchange orderId   condition broker
+-------------------------------------------------------------------------------------
+2025.03.11 TRD-0   12:13:38.743 IBM 187.0142 1000 ARCA     ORD-17581 N         CITI  
+2025.03.11 TRD-12  09:55:28.668 IBM 186.9854 300  NYSE     ORD-12321 F         BOFA  
+2025.03.11 TRD-34  10:36:54.656 IBM 188.0481 300  NASDAQ   ORD-21768 N         GSCO  
+2025.03.11 TRD-130 15:56:26.335 IBM 188.7441 2000 NYSE     ORD-9048  T         GSCO  
+2025.03.11 TRD-191 11:07:10.873 IBM 190.3214 100  NASDAQ   ORD-3537  N         BARC  
+2025.03.11 TRD-196 09:45:40.495 IBM 187.2113 500  ARCA     ORD-5955  N         BOFA  
+2025.03.11 TRD-271 12:15:10.107 IBM 189.7654 1000 NYSE     ORD-21533 N         UBS   
+2025.03.11 TRD-318 13:24:20.463 IBM 185.2239 500  NYSE     ORD-19757 N         BARC  
+2025.03.11 TRD-352 14:52:26.172 IBM 189.6614 200  NYSE     ORD-13513 N         CITI  
+2025.03.11 TRD-477 13:51:06.580 IBM 188.1152 500  NYSE     ORD-362   F         GSCO  
+2025.03.11 TRD-482 13:28:39.540 IBM 189.9113 500  BATS     ORD-2214  T         GSCO  
+2025.03.11 TRD-648 15:25:09.484 IBM 185.3012 2000 NYSE     ORD-6380  N         BOFA  
+2025.03.11 TRD-658 13:31:38.931 IBM 189.2542 300  ARCA     ORD-5140  T         JPMC  
+2025.03.11 TRD-677 15:31:21.818 IBM 188.51   500  ARCA     ORD-22232 N         MSCO  
+2025.03.11 TRD-689 15:00:16.084 IBM 187.7864 500  NYSE     ORD-19577 N         GSCO  
+
+
+
+GateWayQuery
+
+q)))gatewayQuery: {[s] rdb_output: select date,tradeId, time, sym,price, size,exchange,orderId,condition,broker from .rdb.trades where sym = s; hdb_output: select from trades where sym = s; :final_output:rdb_output,hdb_output    }
+q)))gatewayQuery[`IBM]
+date       tradeId time         sym price    size exchange orderId   condition broker
+-------------------------------------------------------------------------------------
+2025.03.11 TRD-0   12:13:38.743 IBM 187.0142 1000 ARCA     ORD-17581 N         CITI  
+2025.03.11 TRD-12  09:55:28.668 IBM 186.9854 300  NYSE     ORD-12321 F         BOFA  
+2025.03.11 TRD-34  10:36:54.656 IBM 188.0481 300  NASDAQ   ORD-21768 N         GSCO  
+2025.03.11 TRD-130 15:56:26.335 IBM 188.7441 2000 NYSE     ORD-9048  T         GSCO  
+2025.03.11 TRD-191 11:07:10.873 IBM 190.3214 100  NASDAQ   ORD-3537  N         BARC  
+2025.03.11 TRD-196 09:45:40.495 IBM 187.2113 500  ARCA     ORD-5955  N         BOFA  
+2025.03.11 TRD-271 12:15:10.107 IBM 189.7654 1000 NYSE     ORD-21533 N         UBS   
+2025.03.11 TRD-318 13:24:20.463 IBM 185.2239 500  NYSE     ORD-19757 N         BARC  
+2025.03.11 TRD-352 14:52:26.172 IBM 189.6614 200  NYSE     ORD-13513 N         CITI  
+2025.03.11 TRD-477 13:51:06.580 IBM 188.1152 500  NYSE     ORD-362   F         GSCO  
+2025.03.11 TRD-482 13:28:39.540 IBM 189.9113 500  BATS     ORD-2214  T         GSCO  
+2025.03.11 TRD-648 15:25:09.484 IBM 185.3012 2000 NYSE     ORD-6380  N         BOFA  
+2025.03.11 TRD-658 13:31:38.931 IBM 189.2542 300  ARCA     ORD-5140  T         JPMC  
+2025.03.11 TRD-677 15:31:21.818 IBM 188.51   500  ARCA     ORD-22232 N         MSCO  
+2025.03.11 TRD-689 15:00:16.084 IBM 187.7864 500  NYSE     ORD-19577 N         GSCO  
+..
+
+q)))select count i by date from gatewayQuery[`IBM]
+date      | x   
+----------| ----
+2025.01.02| 4035
+2025.01.03| 3939
+2025.01.04| 3993
+2025.01.05| 3986
+2025.01.06| 3926
+2025.03.11| 994 
