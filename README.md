@@ -9,10 +9,6 @@ An end-to-end equities trade data pipeline built entirely in KDB+/q, simulating 
 ### Level 1 — Batch Pipeline
 
 ```
-                        ┌──────────────────────────────────────────────────────────┐
-                        │                    PIPELINE FLOW                         │
-                        └──────────────────────────────────────────────────────────┘
-
   ┌─────────────┐     ┌───────────────┐     ┌────────────────┐     ┌─────────────┐
   │  Phase 1    │────▶│   Phase 2     │────▶│    Phase 3     │────▶│  Phase 4    │
   │ Data Gen    │     │ Clean & Enrich│     │ HDB + RDB Arch │     │ Analytics   │
@@ -46,7 +42,6 @@ An end-to-end equities trade data pipeline built entirely in KDB+/q, simulating 
                 │  .gw.get*()      │
                 │  Query routing   │
                 │  Error handling  │
-                │  Reconnection    │
                 └────────┬─────────┘
                          │
                     Traders / Quants
@@ -57,7 +52,7 @@ An end-to-end equities trade data pipeline built entirely in KDB+/q, simulating 
 - **HDB Process** loads the partitioned database from disk and serves historical queries via namespaced `.hdb.*` functions
 - **RDB Process** generates today's data in-memory (50K trades, 100K quotes) and serves real-time queries via `.rdb.*` functions
 - **Gateway** connects to both over IPC (TCP/IP), routes queries, combines results, and handles process failures gracefully
-- **EOD (End of Day):** `.rdb.eod` cleans and saves today's RDB data as a new HDB partition, then clears RDB memory. Gateway triggers HDB reload.
+- **EOD (End of Day):** `.rdb.eod` cleans and saves today's RDB data as a new HDB partition, then clears RDB memory
 
 **HDB Structure on Disk:**
 ```
@@ -105,7 +100,7 @@ hdb/
 ```
 Equities Trade Pipeline/
 │
-├── run.q                ← Master orchestrator — runs full pipeline
+├── run.q                ← Master orchestrator — runs full Level 1 pipeline
 ├── log.q                ← Logging utility (.log.info, .log.warn, .log.err)
 ├── dataGeneration.q     ← Generates 3.5M rows of synthetic market data
 ├── load.q               ← CSV ingestion with type casting (0: operator)
@@ -115,10 +110,11 @@ Equities Trade Pipeline/
 ├── rdb.q                ← RDB simulation + gateway query function (Level 1)
 ├── analytics.q          ← VWAP, spreads, anomalies, exec quality, P&L
 │
-├── level2/              ← IPC Multi-Process Architecture
-│   ├── hdb_proc.q       ← HDB process — loads HDB, serves .hdb.* queries (port 5010)
-│   ├── rdb_proc.q       ← RDB process — in-memory today data, .rdb.* queries (port 5011)
-│   └── gw.q             ← Gateway — routes queries across HDB + RDB (port 5020)
+├── hdb_proc.q           ← Level 2: HDB process — serves .hdb.* queries (port 5010)
+├── rdb_proc.q           ← Level 2: RDB process — in-memory data, .rdb.* queries (port 5011)
+├── gw.q                 ← Level 2: Gateway — routes queries across HDB + RDB (port 5020)
+├── TCP_IP_testing.txt   ← Level 2: IPC learning notes and experiments
+├── rdb_execution on q server.txt  ← RDB execution log
 │
 ├── data/                ← Generated CSV files
 │   ├── trades.csv
@@ -142,11 +138,12 @@ Equities Trade Pipeline/
 
 **Dependency Chain:**
 ```
-Level 1:                          Level 2:
-run.q                             Terminal 1: q level2/hdb_proc.q -p 5010
-  ├── dataGeneration.q            Terminal 2: q level2/rdb_proc.q -p 5011
-  └── analytics.q                 Terminal 3: q level2/gw.q -p 5020
-        └── hdb_build.q           Terminal 4: client connects to 5020
+Level 1 (batch):                  Level 2 (multi-process):
+q run.q                           Terminal 1: q hdb_proc.q -p 5010
+  ├── log.q                       Terminal 2: q rdb_proc.q -p 5011
+  ├── dataGeneration.q            Terminal 3: q gw.q -p 5020
+  └── analytics.q                 Terminal 4: client connects to 5020
+        └── hdb_build.q
               └── clean.q
                     ├── functions.q
                     └── load.q
@@ -203,7 +200,7 @@ run.q                             Terminal 1: q level2/hdb_proc.q -p 5010
 | `fillNulls[t;col]`   | Forward-fill nulls per sym group (dynamic column)        | Functional update + `fills` |
 | `fixNegatives[t;col]`| Absolute value on negative sizes (dynamic column)        | Functional update + `abs`   |
 | `removeZeroSize`     | Drop zero-size trades                                    | `select where`              |
-| `filterTradingHours` | Keep only 09:30–16:00 records                            | `within` keyword            |
+| `filterTradingHours` | Keep only 09:30-16:00 records                            | `within` keyword            |
 
 `fillNulls` and `fixNegatives` use **functional form** (`!` with 4 args) for dynamic column names — a key production KDB+ pattern.
 
@@ -266,13 +263,13 @@ run.q                             Terminal 1: q level2/hdb_proc.q -p 5010
 ## Technical Notes
 
 ### Schema Design: tradeId and orderId as Symbols
-`tradeId` and `orderId` are stored as KDB+ symbols rather than strings. In production, unique identifiers like trade IDs are typically stored as strings (char lists) because symbols are interned — every unique symbol is added to the global sym file and never garbage collected. For a project with 1M unique tradeIds, this bloats the sym file. We used symbols here for simplicity and query convenience (backtick filtering), but in a production system with billions of unique IDs, strings would be the correct choice.
+`tradeId` and `orderId` are stored as KDB+ symbols rather than strings. In production, unique identifiers like trade IDs are typically stored as strings (char lists) because symbols are interned — every unique symbol is added to the global sym file and never garbage collected. For a project with 1M unique tradeIds, this bloats the sym file. Symbols are used here for simplicity and query convenience, but in a production system with billions of unique IDs, strings would be the correct choice.
 
 ### .Q.en Enumerates All Symbol Columns
-`.Q.en[`:hdb; table]` enumerates **every** symbol-type column in the table against the `hdb/sym` file — not just the `sym` column. This means `tradeId`, `orderId`, `exchange`, `broker`, `condition`, and `side` all get enumerated if they are symbol type. This is important to understand when inspecting the sym file contents.
+`.Q.en` enumerates **every** symbol-type column in the table against the `hdb/sym` file — not just the `sym` column. This means `tradeId`, `orderId`, `exchange`, `broker`, `condition`, and `side` all get enumerated if they are symbol type. This is important to understand when inspecting the sym file contents.
 
 ### .hdb.getSyms Queries Data, Not the Sym File
-`.hdb.getSyms` is implemented as `exec distinct sym from select sym from trades` rather than `get :hdb/sym`. The query approach only returns symbols that actually exist in the trade data, while reading the sym file directly would return every symbol ever enumerated — including values from other columns like broker codes and exchange names.
+`.hdb.getSyms` is implemented as `exec distinct sym from select sym from trades` rather than reading the sym file directly with `get`. The query approach only returns symbols that actually exist in the trade data, while reading the sym file would return every symbol ever enumerated — including values from other columns like broker codes and exchange names.
 
 ---
 
@@ -290,7 +287,7 @@ This runs the full pipeline:
 1. Generates 3.5M rows of synthetic market data
 2. Loads and cleans data (removes ~100K dirty records)
 3. Builds date-partitioned HDB with sym enumeration
-4. Runs analytics and exports CSV reports
+4. Runs analytics and exports CSV reports to `reports/`
 
 ### Level 2 — IPC Multi-Process Architecture
 
@@ -298,13 +295,13 @@ Launch each process in a **separate terminal** (order matters):
 
 ```bash
 # Terminal 1: Start HDB process (loads partitioned database)
-q level2/hdb_proc.q -p 5010
+q hdb_proc.q -p 5010
 
 # Terminal 2: Start RDB process (generates today's in-memory data)
-q level2/rdb_proc.q -p 5011
+q rdb_proc.q -p 5011
 
 # Terminal 3: Start Gateway (connects to HDB + RDB)
-q level2/gw.q -p 5020
+q gw.q -p 5020
 
 # Terminal 4: Client — connect and query
 q
@@ -318,11 +315,13 @@ h (`.gw.getRowCounts; ::)
 
 ### End-of-Day Process
 ```q
-// From gateway or client connected to RDB:
+// From client connected to RDB (port 5011):
+h: hopen 5011
 h (`.rdb.eod; ::)          // RDB cleans, saves to HDB, clears memory
 
 // Then tell HDB to reload:
-hdbHandle "\\l hdb"         // HDB picks up the new partition
+hdb: hopen 5010
+hdb "\\l hdb"               // HDB picks up the new partition
 ```
 
 ### Interactive queries after loading HDB:
@@ -338,10 +337,9 @@ select count i by date from quotes
 
 If this were a production system, the following enhancements would be made:
 
-- **Tickerplant integration** — replace CSV ingestion with real-time tick capture via pub/sub
-- **Journal-based recovery** — tickerplant journals for RDB crash recovery
+- **Tickerplant integration** — replace CSV ingestion with real-time pub/sub tick capture
+- **Journal-based recovery** — log all messages for RDB crash recovery
 - **CEP (Complex Event Processing)** — real-time rolling analytics engine
-- **Chained tickerplant** — fan-out to slow subscribers without impacting primary TP
 - **Incremental HDB builds** — only write new date partitions, skip existing ones
 - **Parallel processing** — use `peach` for multi-threaded partition writes
 - **Compression** — enable column compression for HDB storage savings
