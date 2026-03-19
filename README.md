@@ -1,10 +1,12 @@
 # Equities Trade Data Pipeline — KDB+/q
 
-An end-to-end equities trade data pipeline built entirely in KDB+/q, simulating a production-grade system used on trading desks at investment banks and hedge funds. The pipeline ingests raw market data from CSV feeds, validates and cleans it, stores it in a date-partitioned Historical Database (HDB), and serves analytics queries used by traders and quants.
+An end-to-end equities trade data pipeline built entirely in KDB+/q, simulating a production-grade system used on trading desks at investment banks and hedge funds. The pipeline ingests raw market data from CSV feeds, validates and cleans it, stores it in a date-partitioned Historical Database (HDB), serves analytics queries, and extends into a multi-process IPC architecture with separate HDB, RDB, and Gateway processes.
 
 ---
 
 ## Architecture
+
+### Level 1 — Batch Pipeline
 
 ```
                         ┌──────────────────────────────────────────────────────────┐
@@ -21,25 +23,41 @@ An end-to-end equities trade data pipeline built entirely in KDB+/q, simulating 
   │ injected    │     │ Range filter  │     │ RDB + Gateway  │     │ Exec Quality│
   └─────────────┘     └───────────────┘     └────────────────┘     │ P&L Report  │
                                                                     └─────────────┘
-
-                        ┌──────────────────────────────────────────┐
-                        │         STORAGE ARCHITECTURE             │
-                        └──────────────────────────────────────────┘
-
-                        ┌──────────────┐     ┌──────────────┐
-   Market Data ────────▶│     RDB      │     │     HDB      │
-   (Today)              │  (In-Memory) │     │   (On-Disk)  │
-                        │  50K trades  │     │  ~1M trades  │
-                        └──────┬───────┘     └──────┬───────┘
-                               │                     │
-                               └──────┬──────────────┘
-                                      │
-                               ┌──────▼───────┐
-                               │   Gateway    │
-                               │ Query Layer  │
-                               │ (RDB + HDB)  │
-                               └──────────────┘
 ```
+
+### Level 2 — IPC Multi-Process Architecture
+
+```
+  ┌──────────────────┐          ┌──────────────────┐
+  │   HDB Process    │          │   RDB Process    │
+  │   (hdb_proc.q)   │          │  (rdb_proc.q)    │
+  │   Port 5010      │          │   Port 5011      │
+  │                  │          │                  │
+  │  .hdb.get*()     │          │  .rdb.get*()     │
+  │  Historical data │          │  Today's data    │
+  │  On-disk (HDB)   │          │  In-memory       │
+  └────────┬─────────┘          └────────┬─────────┘
+           │                              │
+           │    ┌──────────────────┐      │
+           └───▶│    Gateway       │◀─────┘
+                │    (gw.q)        │
+                │    Port 5020     │
+                │                  │
+                │  .gw.get*()      │
+                │  Query routing   │
+                │  Error handling  │
+                │  Reconnection    │
+                └────────┬─────────┘
+                         │
+                    Traders / Quants
+                    connect here
+```
+
+**How it works:**
+- **HDB Process** loads the partitioned database from disk and serves historical queries via namespaced `.hdb.*` functions
+- **RDB Process** generates today's data in-memory (50K trades, 100K quotes) and serves real-time queries via `.rdb.*` functions
+- **Gateway** connects to both over IPC (TCP/IP), routes queries, combines results, and handles process failures gracefully
+- **EOD (End of Day):** `.rdb.eod` cleans and saves today's RDB data as a new HDB partition, then clears RDB memory. Gateway triggers HDB reload.
 
 **HDB Structure on Disk:**
 ```
@@ -94,8 +112,13 @@ Equities Trade Pipeline/
 ├── functions.q          ← Reusable cleaning functions (5 functions)
 ├── clean.q              ← Data validation & cleaning pipeline
 ├── hdb_build.q          ← Partitioned HDB construction
-├── rdb.q                ← RDB simulation + gateway query function
+├── rdb.q                ← RDB simulation + gateway query function (Level 1)
 ├── analytics.q          ← VWAP, spreads, anomalies, exec quality, P&L
+│
+├── level2/              ← IPC Multi-Process Architecture
+│   ├── hdb_proc.q       ← HDB process — loads HDB, serves .hdb.* queries (port 5010)
+│   ├── rdb_proc.q       ← RDB process — in-memory today data, .rdb.* queries (port 5011)
+│   └── gw.q             ← Gateway — routes queries across HDB + RDB (port 5020)
 │
 ├── data/                ← Generated CSV files
 │   ├── trades.csv
@@ -119,14 +142,55 @@ Equities Trade Pipeline/
 
 **Dependency Chain:**
 ```
-run.q
-  ├── dataGeneration.q
-  └── analytics.q
-        └── hdb_build.q
+Level 1:                          Level 2:
+run.q                             Terminal 1: q level2/hdb_proc.q -p 5010
+  ├── dataGeneration.q            Terminal 2: q level2/rdb_proc.q -p 5011
+  └── analytics.q                 Terminal 3: q level2/gw.q -p 5020
+        └── hdb_build.q           Terminal 4: client connects to 5020
               └── clean.q
                     ├── functions.q
                     └── load.q
 ```
+
+---
+
+## Level 2 — API Reference
+
+### HDB Process (Port 5010)
+
+| Function                         | Description                              | Parameters     |
+|----------------------------------|------------------------------------------|----------------|
+| `.hdb.getTradesBySymDate[s;d]`   | Trades for a symbol on a specific date   | sym, date      |
+| `.hdb.getTradesBySym[s]`         | All historical trades for a symbol       | sym            |
+| `.hdb.getQuotesBySymDate[s;d]`   | Quotes for a symbol on a specific date   | sym, date      |
+| `.hdb.getVWAP[s;d]`             | VWAP for a symbol on a specific date     | sym, date      |
+| `.hdb.getDates[]`               | All available partition dates             | none           |
+| `.hdb.getSyms[]`                | All distinct symbols in HDB              | none           |
+
+### RDB Process (Port 5011)
+
+| Function                     | Description                                | Parameters     |
+|------------------------------|--------------------------------------------|----------------|
+| `.rdb.getTradesBySym[s]`     | Today's trades for a symbol                | sym            |
+| `.rdb.getQuotesBySym[s]`     | Today's quotes for a symbol                | sym            |
+| `.rdb.getVWAP[s]`           | Today's VWAP for a symbol                  | sym            |
+| `.rdb.getDate[]`            | Today's date                                | none           |
+| `.rdb.getSyms[]`            | All distinct symbols in RDB                | none           |
+| `.rdb.getRowCounts[]`       | Trade and quote row counts                  | none           |
+| `.rdb.insertTrade[data]`    | Insert new trade rows                       | table data     |
+| `.rdb.eod[]`                | End-of-day: clean, save to HDB, clear RDB  | none           |
+
+### Gateway (Port 5020)
+
+| Function                     | Description                                       | Parameters     |
+|------------------------------|---------------------------------------------------|----------------|
+| `.gw.getTradesBySym[s]`     | Combined trades across HDB + RDB                  | sym            |
+| `.gw.getVWAP[s]`           | Combined VWAP across all dates + today             | sym            |
+| `.gw.getQuotesBySym[s]`    | Combined quotes across HDB + RDB                  | sym            |
+| `.gw.getSyms[]`            | Union of all symbols from HDB + RDB               | none           |
+| `.gw.getDates[]`           | All dates (HDB partitions + today)                 | none           |
+| `.gw.getRowCounts[]`       | Total row counts across both processes             | none           |
+| `.gw.reconnect[]`          | Check and reconnect stale/dead handles             | none           |
 
 ---
 
@@ -172,11 +236,20 @@ run.q
 
 **KDB+ Architecture**
 - Date-partitioned HDB with splayed tables
-- Symbol enumeration with `.Q.en`
+- Symbol enumeration with `.Q.en` (enumerates all symbol columns, not just sym)
 - `sym` file management (shared across tables)
 - RDB simulation in `.rdb` namespace
 - Gateway query pattern (RDB + HDB combined)
 - Sorted attributes (`s#`) on sym column
+
+**IPC & Multi-Process Architecture (Level 2)**
+- Separate HDB, RDB, and Gateway processes on dedicated ports
+- TCP/IP communication via `hopen` (sync and async)
+- Protected evaluation (`@[hopen; port; errorHandler]`) for resilient connections
+- Namespaced API design (`.hdb.*`, `.rdb.*`, `.gw.*`)
+- Gateway query routing — combines results from multiple processes
+- Stale handle detection and automatic reconnection (`.gw.reconnect`)
+- End-of-day lifecycle — RDB cleans, saves to HDB partition, clears memory
 
 **Advanced Joins**
 - `lj` — Left join (refdata enrichment)
@@ -190,10 +263,24 @@ run.q
 
 ---
 
+## Technical Notes
+
+### Schema Design: tradeId and orderId as Symbols
+`tradeId` and `orderId` are stored as KDB+ symbols rather than strings. In production, unique identifiers like trade IDs are typically stored as strings (char lists) because symbols are interned — every unique symbol is added to the global sym file and never garbage collected. For a project with 1M unique tradeIds, this bloats the sym file. We used symbols here for simplicity and query convenience (backtick filtering), but in a production system with billions of unique IDs, strings would be the correct choice.
+
+### .Q.en Enumerates All Symbol Columns
+`.Q.en[`:hdb; table]` enumerates **every** symbol-type column in the table against the `hdb/sym` file — not just the `sym` column. This means `tradeId`, `orderId`, `exchange`, `broker`, `condition`, and `side` all get enumerated if they are symbol type. This is important to understand when inspecting the sym file contents.
+
+### .hdb.getSyms Queries Data, Not the Sym File
+`.hdb.getSyms` is implemented as `exec distinct sym from select sym from trades` rather than `get :hdb/sym`. The query approach only returns symbols that actually exist in the trade data, while reading the sym file directly would return every symbol ever enumerated — including values from other columns like broker codes and exchange names.
+
+---
+
 ## How to Run
 
 **Prerequisites:** KDB+ 4.x (KX Academy sandbox or local install)
 
+### Level 1 — Full Batch Pipeline
 ```bash
 cd ~/Equities\ Trade\ Pipeline
 q run.q
@@ -205,13 +292,40 @@ This runs the full pipeline:
 3. Builds date-partitioned HDB with sym enumeration
 4. Runs analytics and exports CSV reports
 
-**Run individual components:**
+### Level 2 — IPC Multi-Process Architecture
+
+Launch each process in a **separate terminal** (order matters):
+
 ```bash
-q analytics.q          # Run analytics only (rebuilds HDB)
-q rdb.q                # Launch RDB simulation + gateway
+# Terminal 1: Start HDB process (loads partitioned database)
+q level2/hdb_proc.q -p 5010
+
+# Terminal 2: Start RDB process (generates today's in-memory data)
+q level2/rdb_proc.q -p 5011
+
+# Terminal 3: Start Gateway (connects to HDB + RDB)
+q level2/gw.q -p 5020
+
+# Terminal 4: Client — connect and query
+q
+h: hopen 5020
+h (`.gw.getTradesBySym; `AAPL)
+h (`.gw.getVWAP; `AAPL)
+h (`.gw.getSyms; ::)
+h (`.gw.getDates; ::)
+h (`.gw.getRowCounts; ::)
 ```
 
-**Interactive queries after loading HDB:**
+### End-of-Day Process
+```q
+// From gateway or client connected to RDB:
+h (`.rdb.eod; ::)          // RDB cleans, saves to HDB, clears memory
+
+// Then tell HDB to reload:
+hdbHandle "\\l hdb"         // HDB picks up the new partition
+```
+
+### Interactive queries after loading HDB:
 ```q
 \l hdb
 select avg price by sym from trades where date = 2025.01.02
@@ -224,13 +338,16 @@ select count i by date from quotes
 
 If this were a production system, the following enhancements would be made:
 
+- **Tickerplant integration** — replace CSV ingestion with real-time tick capture via pub/sub
+- **Journal-based recovery** — tickerplant journals for RDB crash recovery
+- **CEP (Complex Event Processing)** — real-time rolling analytics engine
+- **Chained tickerplant** — fan-out to slow subscribers without impacting primary TP
 - **Incremental HDB builds** — only write new date partitions, skip existing ones
-- **Tickerplant integration** — replace CSV ingestion with real-time tick capture
-- **Error handling** — protected evaluation (` @` / `.` ) around all I/O operations
 - **Parallel processing** — use `peach` for multi-threaded partition writes
 - **Compression** — enable column compression for HDB storage savings
 - **Permissions & access control** — role-based query restrictions
 - **Monitoring** — heartbeat checks, memory usage tracking, query latency alerts
+- **Schema migration** — tradeId/orderId to string type for production-scale unique IDs
 
 ---
 
@@ -238,6 +355,6 @@ If this were a production system, the following enhancements would be made:
 
 **Savan Awanti**
 
-Master's in Data Analytics at Northeastern University, Boston. Passionate about data engineering, financial technology, and quantitative systems, with a focus on KDB+/q and its applications in capital markets. Holds KX Academy q1 and q2 certifications along with KDB+ Architecture and Introduction to KDB+ certifications.
+Master's in Data Analytics at Northeastern University, Boston. Passionate about data engineering, financial technology, and quantitative systems, with a focus on KDB+/q and its applications in capital markets. Holds KX Academy q-1, q-2, Introduction to KDB+, and KDB+ Architecture certifications.
 
 Built as a capstone portfolio project to demonstrate junior-level KDB+/q development skills for equities trading desk roles.

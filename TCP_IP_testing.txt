@@ -1,0 +1,1147 @@
+jovyan@jupyter-savanawanti-40gmail-2ecom:~$ q -p 5010
+KDB+ 4.1 2025.04.28 Copyright (C) 1993-2025 Kx Systems
+l64/ 8()core 64310MB jovyan jupyter-savanawanti-40gmail-2ecom 10.33.240.21 EXPIRE 2026.11.03    localkod 00000000-0000-0000-0000-000000000000
+
+q)t: ([]a: 1 2 3;b:1 2 3)
+q)t
+a b
+---
+1 1
+2 2
+3 3
+q)t
+a b
+---
+1 1
+2 2
+3 3
+q)t
+a b
+---
+1 1
+2 2
+3 3
+q)t
+a b
+---
+1 1
+2 2
+3 3
+q)t
+a b
+---
+2 1
+4 2
+6 3
+q)t
+a  b
+----
+4  1
+8  2
+12 3
+q)\\
+
+
+
+
+
+
+
+
+jovyan@jupyter-savanawanti-40gmail-2ecom:~/Equities Trade Pipeline$ q
+KDB+ 4.1 2025.04.28 Copyright (C) 1993-2025 Kx Systems
+l64/ 8()core 64310MB jovyan jupyter-savanawanti-40gmail-2ecom 10.33.240.21 EXPIRE 2026.11.03    localkod 00000000-0000-0000-0000-000000000000
+
+q)h: hopen 5010
+q)h "2+2"
+4
+q)h "til 10"
+0 1 2 3 4 5 6 7 8 9
+q)h "\\t"
+0i
+q)h "tables[]"
+`symbol$()
+q)h "tables[]"
+,`t
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)neg[h] "update a: a*2 from t"
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "update a: a*2 from t"
+a b
+---
+2 1
+4 2
+6 3
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "t:update a: a*2 from t"
+q)h "select from t"
+a b
+---
+2 1
+4 2
+6 3
+q)neg[h] "t:update a: a*2 from t"
+q)h "select from t"
+a  b
+----
+4  1
+8  2
+12 3
+q)neg[h] "select from t"
+q)neg[h] "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  neg[h] "select from t"
+       ^
+q)h "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  h "select from t"
+       ^
+q)\\
+jovyan@jupyter-savanawanti-40gmail-2ecom:~/Equities Trade Pipeline$ q
+KDB+ 4.1 2025.04.28 Copyright (C) 1993-2025 Kx Systems
+l64/ 8()core 64310MB jovyan jupyter-savanawanti-40gmail-2ecom 10.33.240.21 EXPIRE 2026.11.03    localkod 00000000-0000-0000-0000-000000000000
+
+q)h: hopen 5010
+q)h "2+2"
+4
+q)h "til 10"
+0 1 2 3 4 5 6 7 8 9
+q)h "\\t"
+0i
+q)h "tables[]"
+`symbol$()
+q)h "tables[]"
+,`t
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)neg[h] "update a: a*2 from t"
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "update a: a*2 from t"
+a b
+---
+2 1
+4 2
+6 3
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "t:update a: a*2 from t"
+q)h "select from t"
+a b
+---
+2 1
+4 2
+6 3
+q)neg[h] "t:update a: a*2 from t"
+q)h "select from t"
+a  b
+----
+4  1
+8  2
+12 3
+q)neg[h] "select from t"
+q)neg[h] "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  neg[h] "select from t"
+       ^
+q)h "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  h "select from t"
+       ^
+q)\\
+jovyan@jupyter-savanawanti-40gmail-2ecom:~/Equities Trade Pipeline$ q
+KDB+ 4.1 2025.04.28 Copyright (C) 1993-2025 Kx Systems
+l64/ 8()core 64310MB jovyan jupyter-savanawanti-40gmail-2ecom 10.33.240.21 EXPIRE 2026.11.03    localkod 00000000-0000-0000-0000-000000000000
+
+q)h: hopen 5010
+q)h "2+2"
+4
+q)h "til 10"
+0 1 2 3 4 5 6 7 8 9
+q)h "\\t"
+0i
+q)h "tables[]"
+`symbol$()
+q)h "tables[]"
+,`t
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)neg[h] "update a: a*2 from t"
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "update a: a*2 from t"
+a b
+---
+2 1
+4 2
+6 3
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "t:update a: a*2 from t"
+q)h "select from t"
+a b
+---
+2 1
+4 2
+6 3
+q)neg[h] "t:update a: a*2 from t"
+q)h "select from t"
+a  b
+----
+4  1
+8  2
+12 3
+q)neg[h] "select from t"
+q)neg[h] "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  neg[h] "select from t"
+       ^
+q)h "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  h "select from t"
+       ^
+q)\\
+jovyan@jupyter-savanawanti-40gmail-2ecom:~/Equities Trade Pipeline$ q
+KDB+ 4.1 2025.04.28 Copyright (C) 1993-2025 Kx Systems
+l64/ 8()core 64310MB jovyan jupyter-savanawanti-40gmail-2ecom 10.33.240.21 EXPIRE 2026.11.03    localkod 00000000-0000-0000-0000-000000000000
+
+q)h: hopen 5010
+q)h "2+2"
+4
+q)h "til 10"
+0 1 2 3 4 5 6 7 8 9
+q)h "\\t"
+0i
+q)h "tables[]"
+`symbol$()
+q)h "tables[]"
+,`t
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)neg[h] "update a: a*2 from t"
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "update a: a*2 from t"
+a b
+---
+2 1
+4 2
+6 3
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "t:update a: a*2 from t"
+q)h "select from t"
+a b
+---
+2 1
+4 2
+6 3
+q)neg[h] "t:update a: a*2 from t"
+q)h "select from t"
+a  b
+----
+4  1
+8  2
+12 3
+q)neg[h] "select from t"
+q)neg[h] "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  neg[h] "select from t"
+       ^
+q)h "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  h "select from t"
+       ^
+q)\\
+jovyan@jupyter-savanawanti-40gmail-2ecom:~/Equities Trade Pipeline$ q
+KDB+ 4.1 2025.04.28 Copyright (C) 1993-2025 Kx Systems
+l64/ 8()core 64310MB jovyan jupyter-savanawanti-40gmail-2ecom 10.33.240.21 EXPIRE 2026.11.03    localkod 00000000-0000-0000-0000-000000000000
+
+q)h: hopen 5010
+q)h "2+2"
+4
+q)h "til 10"
+0 1 2 3 4 5 6 7 8 9
+q)h "\\t"
+0i
+q)h "tables[]"
+`symbol$()
+q)h "tables[]"
+,`t
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)neg[h] "update a: a*2 from t"
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "update a: a*2 from t"
+a b
+---
+2 1
+4 2
+6 3
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "t:update a: a*2 from t"
+q)h "select from t"
+a b
+---
+2 1
+4 2
+6 3
+q)neg[h] "t:update a: a*2 from t"
+q)h "select from t"
+a  b
+----
+4  1
+8  2
+12 3
+q)neg[h] "select from t"
+q)neg[h] "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  neg[h] "select from t"
+       ^
+q)h "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  h "select from t"
+       ^
+q)\\
+jovyan@jupyter-savanawanti-40gmail-2ecom:~/Equities Trade Pipeline$ q
+KDB+ 4.1 2025.04.28 Copyright (C) 1993-2025 Kx Systems
+l64/ 8()core 64310MB jovyan jupyter-savanawanti-40gmail-2ecom 10.33.240.21 EXPIRE 2026.11.03    localkod 00000000-0000-0000-0000-000000000000
+
+q)h: hopen 5010
+q)h "2+2"
+4
+q)h "til 10"
+0 1 2 3 4 5 6 7 8 9
+q)h "\\t"
+0i
+q)h "tables[]"
+`symbol$()
+q)h "tables[]"
+,`t
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)neg[h] "update a: a*2 from t"
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "update a: a*2 from t"
+a b
+---
+2 1
+4 2
+6 3
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "t:update a: a*2 from t"
+q)h "select from t"
+a b
+---
+2 1
+4 2
+6 3
+q)neg[h] "t:update a: a*2 from t"
+q)h "select from t"
+a  b
+----
+4  1
+8  2
+12 3
+q)neg[h] "select from t"
+q)neg[h] "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  neg[h] "select from t"
+       ^
+q)h "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  h "select from t"
+       ^
+q)\\
+jovyan@jupyter-savanawanti-40gmail-2ecom:~/Equities Trade Pipeline$ q
+KDB+ 4.1 2025.04.28 Copyright (C) 1993-2025 Kx Systems
+l64/ 8()core 64310MB jovyan jupyter-savanawanti-40gmail-2ecom 10.33.240.21 EXPIRE 2026.11.03    localkod 00000000-0000-0000-0000-000000000000
+
+q)h: hopen 5010
+q)h "2+2"
+4
+q)h "til 10"
+0 1 2 3 4 5 6 7 8 9
+q)h "\\t"
+0i
+q)h "tables[]"
+`symbol$()
+q)h "tables[]"
+,`t
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)neg[h] "update a: a*2 from t"
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "update a: a*2 from t"
+a b
+---
+2 1
+4 2
+6 3
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "t:update a: a*2 from t"
+q)h "select from t"
+a b
+---
+2 1
+4 2
+6 3
+q)neg[h] "t:update a: a*2 from t"
+q)h "select from t"
+a  b
+----
+4  1
+8  2
+12 3
+q)neg[h] "select from t"
+q)neg[h] "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  neg[h] "select from t"
+       ^
+q)h "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  h "select from t"
+       ^
+q)\\
+jovyan@jupyter-savanawanti-40gmail-2ecom:~/Equities Trade Pipeline$ q
+KDB+ 4.1 2025.04.28 Copyright (C) 1993-2025 Kx Systems
+l64/ 8()core 64310MB jovyan jupyter-savanawanti-40gmail-2ecom 10.33.240.21 EXPIRE 2026.11.03    localkod 00000000-0000-0000-0000-000000000000
+
+q)h: hopen 5010
+q)h "2+2"
+4
+q)h "til 10"
+0 1 2 3 4 5 6 7 8 9
+q)h "\\t"
+0i
+q)h "tables[]"
+`symbol$()
+q)h "tables[]"
+,`t
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)neg[h] "update a: a*2 from t"
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "update a: a*2 from t"
+a b
+---
+2 1
+4 2
+6 3
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "t:update a: a*2 from t"
+q)h "select from t"
+a b
+---
+2 1
+4 2
+6 3
+q)neg[h] "t:update a: a*2 from t"
+q)h "select from t"
+a  b
+----
+4  1
+8  2
+12 3
+q)neg[h] "select from t"
+q)neg[h] "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  neg[h] "select from t"
+       ^
+q)h "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  h "select from t"
+       ^
+q)\\
+jovyan@jupyter-savanawanti-40gmail-2ecom:~/Equities Trade Pipeline$ q
+KDB+ 4.1 2025.04.28 Copyright (C) 1993-2025 Kx Systems
+l64/ 8()core 64310MB jovyan jupyter-savanawanti-40gmail-2ecom 10.33.240.21 EXPIRE 2026.11.03    localkod 00000000-0000-0000-0000-000000000000
+
+q)h: hopen 5010
+q)h "2+2"
+4
+q)h "til 10"
+0 1 2 3 4 5 6 7 8 9
+q)h "\\t"
+0i
+q)h "tables[]"
+`symbol$()
+q)h "tables[]"
+,`t
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)neg[h] "update a: a*2 from t"
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "update a: a*2 from t"
+a b
+---
+2 1
+4 2
+6 3
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "t:update a: a*2 from t"
+q)h "select from t"
+a b
+---
+2 1
+4 2
+6 3
+q)neg[h] "t:update a: a*2 from t"
+q)h "select from t"
+a  b
+----
+4  1
+8  2
+12 3
+q)neg[h] "select from t"
+q)neg[h] "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  neg[h] "select from t"
+       ^
+q)h "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  h "select from t"
+       ^
+q)\\
+jovyan@jupyter-savanawanti-40gmail-2ecom:~/Equities Trade Pipeline$ q
+KDB+ 4.1 2025.04.28 Copyright (C) 1993-2025 Kx Systems
+l64/ 8()core 64310MB jovyan jupyter-savanawanti-40gmail-2ecom 10.33.240.21 EXPIRE 2026.11.03    localkod 00000000-0000-0000-0000-000000000000
+
+q)h: hopen 5010
+q)h "2+2"
+4
+q)h "til 10"
+0 1 2 3 4 5 6 7 8 9
+q)h "\\t"
+0i
+q)h "tables[]"
+`symbol$()
+q)h "tables[]"
+,`t
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)neg[h] "update a: a*2 from t"
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "update a: a*2 from t"
+a b
+---
+2 1
+4 2
+6 3
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "t:update a: a*2 from t"
+q)h "select from t"
+a b
+---
+2 1
+4 2
+6 3
+q)neg[h] "t:update a: a*2 from t"
+q)h "select from t"
+a  b
+----
+4  1
+8  2
+12 3
+q)neg[h] "select from t"
+q)neg[h] "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  neg[h] "select from t"
+       ^
+q)h "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  h "select from t"
+       ^
+q)\\
+jovyan@jupyter-savanawanti-40gmail-2ecom:~/Equities Trade Pipeline$ q
+KDB+ 4.1 2025.04.28 Copyright (C) 1993-2025 Kx Systems
+l64/ 8()core 64310MB jovyan jupyter-savanawanti-40gmail-2ecom 10.33.240.21 EXPIRE 2026.11.03    localkod 00000000-0000-0000-0000-000000000000
+
+q)h: hopen 5010
+q)h "2+2"
+4
+q)h "til 10"
+0 1 2 3 4 5 6 7 8 9
+q)h "\\t"
+0i
+q)h "tables[]"
+`symbol$()
+q)h "tables[]"
+,`t
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)neg[h] "update a: a*2 from t"
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "update a: a*2 from t"
+a b
+---
+2 1
+4 2
+6 3
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "t:update a: a*2 from t"
+q)h "select from t"
+a b
+---
+2 1
+4 2
+6 3
+q)neg[h] "t:update a: a*2 from t"
+q)h "select from t"
+a  b
+----
+4  1
+8  2
+12 3
+q)neg[h] "select from t"
+q)neg[h] "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  neg[h] "select from t"
+       ^
+q)h "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  h "select from t"
+       ^
+q)\\
+jovyan@jupyter-savanawanti-40gmail-2ecom:~/Equities Trade Pipeline$ q
+KDB+ 4.1 2025.04.28 Copyright (C) 1993-2025 Kx Systems
+l64/ 8()core 64310MB jovyan jupyter-savanawanti-40gmail-2ecom 10.33.240.21 EXPIRE 2026.11.03    localkod 00000000-0000-0000-0000-000000000000
+
+q)h: hopen 5010
+q)h "2+2"
+4
+q)h "til 10"
+0 1 2 3 4 5 6 7 8 9
+q)h "\\t"
+0i
+q)h "tables[]"
+`symbol$()
+q)h "tables[]"
+,`t
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)neg[h] "update a: a*2 from t"
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "update a: a*2 from t"
+a b
+---
+2 1
+4 2
+6 3
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "t:update a: a*2 from t"
+q)h "select from t"
+a b
+---
+2 1
+4 2
+6 3
+q)neg[h] "t:update a: a*2 from t"
+q)h "select from t"
+a  b
+----
+4  1
+8  2
+12 3
+q)neg[h] "select from t"
+q)neg[h] "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  neg[h] "select from t"
+       ^
+q)h "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  h "select from t"
+       ^
+q)\\
+jovyan@jupyter-savanawanti-40gmail-2ecom:~/Equities Trade Pipeline$ q
+KDB+ 4.1 2025.04.28 Copyright (C) 1993-2025 Kx Systems
+l64/ 8()core 64310MB jovyan jupyter-savanawanti-40gmail-2ecom 10.33.240.21 EXPIRE 2026.11.03    localkod 00000000-0000-0000-0000-000000000000
+
+q)h: hopen 5010
+q)h "2+2"
+4
+q)h "til 10"
+0 1 2 3 4 5 6 7 8 9
+q)h "\\t"
+0i
+q)h "tables[]"
+`symbol$()
+q)h "tables[]"
+,`t
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)neg[h] "update a: a*2 from t"
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "update a: a*2 from t"
+a b
+---
+2 1
+4 2
+6 3
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "t:update a: a*2 from t"
+q)h "select from t"
+a b
+---
+2 1
+4 2
+6 3
+q)neg[h] "t:update a: a*2 from t"
+q)h "select from t"
+a  b
+----
+4  1
+8  2
+12 3
+q)neg[h] "select from t"
+q)neg[h] "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  neg[h] "select from t"
+       ^
+q)h "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  h "select from t"
+       ^
+q)\\
+jovyan@jupyter-savanawanti-40gmail-2ecom:~/Equities Trade Pipeline$ q
+KDB+ 4.1 2025.04.28 Copyright (C) 1993-2025 Kx Systems
+l64/ 8()core 64310MB jovyan jupyter-savanawanti-40gmail-2ecom 10.33.240.21 EXPIRE 2026.11.03    localkod 00000000-0000-0000-0000-000000000000
+
+q)h: hopen 5010
+q)h "2+2"
+4
+q)h "til 10"
+0 1 2 3 4 5 6 7 8 9
+q)h "\\t"
+0i
+q)h "tables[]"
+`symbol$()
+q)h "tables[]"
+,`t
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)neg[h] "update a: a*2 from t"
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "update a: a*2 from t"
+a b
+---
+2 1
+4 2
+6 3
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "t:update a: a*2 from t"
+q)h "select from t"
+a b
+---
+2 1
+4 2
+6 3
+q)neg[h] "t:update a: a*2 from t"
+q)h "select from t"
+a  b
+----
+4  1
+8  2
+12 3
+q)neg[h] "select from t"
+q)neg[h] "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  neg[h] "select from t"
+       ^
+q)h "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  h "select from t"
+       ^
+q)\\
+jovyan@jupyter-savanawanti-40gmail-2ecom:~/Equities Trade Pipeline$ q
+KDB+ 4.1 2025.04.28 Copyright (C) 1993-2025 Kx Systems
+l64/ 8()core 64310MB jovyan jupyter-savanawanti-40gmail-2ecom 10.33.240.21 EXPIRE 2026.11.03    localkod 00000000-0000-0000-0000-000000000000
+
+q)h: hopen 5010
+q)h "2+2"
+4
+q)h "til 10"
+0 1 2 3 4 5 6 7 8 9
+q)h "\\t"
+0i
+q)h "tables[]"
+`symbol$()
+q)h "tables[]"
+,`t
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)neg[h] "update a: a*2 from t"
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "update a: a*2 from t"
+a b
+---
+2 1
+4 2
+6 3
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "t:update a: a*2 from t"
+q)h "select from t"
+a b
+---
+2 1
+4 2
+6 3
+q)neg[h] "t:update a: a*2 from t"
+q)h "select from t"
+a  b
+----
+4  1
+8  2
+12 3
+q)neg[h] "select from t"
+q)neg[h] "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  neg[h] "select from t"
+       ^
+q)h "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  h "select from t"
+       ^
+q)\\
+jovyan@jupyter-savanawanti-40gmail-2ecom:~/Equities Trade Pipeline$ q
+KDB+ 4.1 2025.04.28 Copyright (C) 1993-2025 Kx Systems
+l64/ 8()core 64310MB jovyan jupyter-savanawanti-40gmail-2ecom 10.33.240.21 EXPIRE 2026.11.03    localkod 00000000-0000-0000-0000-000000000000
+
+q)h: hopen 5010
+q)h "2+2"
+4
+q)h "til 10"
+0 1 2 3 4 5 6 7 8 9
+q)h "\\t"
+0i
+q)h "tables[]"
+`symbol$()
+q)h "tables[]"
+,`t
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)neg[h] "update a: a*2 from t"
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "update a: a*2 from t"
+a b
+---
+2 1
+4 2
+6 3
+q)h "select from t"
+a b
+---
+1 1
+2 2
+3 3
+q)h "t:update a: a*2 from t"
+q)h "select from t"
+a b
+---
+2 1
+4 2
+6 3
+q)neg[h] "t:update a: a*2 from t"
+q)h "select from t"
+a  b
+----
+4  1
+8  2
+12 3
+q)neg[h] "select from t"
+q)neg[h] "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  neg[h] "select from t"
+       ^
+q)h "select from t"
+'Cannot write to handle 8. OS reports: Bad file descriptor
+  [0]  h "select from t"
+       ^
+q)\\
+
+
+
+
+
+
+
+
+Phase -2
+
+
+
+
+KDB+ 4.1 2025.04.28 Copyright (C) 1993-2025 Kx Systems
+l64/ 8()core 64310MB jovyan jupyter-savanawanti-40gmail-2ecom 10.33.240.21 EXPIRE 2026.11.03    localkod 00000000-0000-0000-0000-000000000000
+
+q)add:{x+y}
+q)t: ([] a: 1 2 3; b: 10 20 30)
+q)
+
+
+
+
+KDB+ 4.1 2025.04.28 Copyright (C) 1993-2025 Kx Systems
+l64/ 8()core 64310MB jovyan jupyter-savanawanti-40gmail-2ecom 10.33.240.21 EXPIRE 2026.11.03    localkod 00000000-0000-0000-0000-000000000000
+
+q)h: hopen 5010
+q)h (`add;3;5)
+8
+q)h "select from t"
+a b 
+----
+1 10
+2 20
+3 30
+q)h ({select from x where a > 1}; t) 
+'t
+  [0]  h ({select from x where a > 1}; t) 
+                                       ^
+q)h: hopen 9999
+'hop. OS reports: Connection refused
+  [0]  h: hopen 9999
+          ^
+q)@[hopen; 5010;{[e]-"connection failed",e;0}]
+'-
+  [0]  @[hopen; 5010;{[e]-"connection failed",e;0}]
+                         ^
+q)@[hopen; 5010;{[e]-1"connection failed",e;0}]
+'-
+  [0]  @[hopen; 5010;{[e]-1"connection failed",e;0}]
+                         ^
+q)@[hopen; 5010; {[e] -1 "Connection failed: ",e; 0}]
+9i
+q)@[hopen; 5011; {[e] -1 "Connection failed: ",e; 0}]
+Connection failed: hop. OS reports: Connection refused
+0
+q)h
+8i
+q)h:@[hopen; 5011; {[e] -1 "Connection failed: ",e; 0}]
+Connection failed: hop. OS reports: Connection refused
+q)h:@[hopen; 5010; {[e] -1 "Connection failed: ",e; 0}]
+q)if[h>0;h "til 10"]
+q)h
+10i
+q)a: if[h>0;h "til 10"]
+q)a
+q)if[h>0;h "select from t"]
+q)a: $[h > 0; h "til 10"; 0N]
+q)a
+0 1 2 3 4 5 6 7 8 9
+q)if[h > 0; show h "til 10"]  
+0 1 2 3 4 5 6 7 8 9
+q)
