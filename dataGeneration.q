@@ -81,8 +81,7 @@ trades: ([]
     tradeId: `$"TRD-",/:string til n_trades;
     orderId: `$"ORD-",/:string n_trades?n_orders;
     condition: n_trades?condList;
-    broker: n_trades?`GSCO`MSCO`JPMC`BOFA`CITI`BARC`UBS`CS
-  );
+    broker: n_trades?`GSCO`MSCO`JPMC`BOFA`CITI`BARC`UBS`CS);
 
 // INJECT DIRTY DATA
 dupCnt: floor n_trades * 0.005;
@@ -95,7 +94,7 @@ zeroSizeIdx: neg[floor n_trades * 0.005]?n_trades;
 trades: @[trades;`size;{[x;i] @[x;i;:;0]}[;zeroSizeIdx]];
 
 trades: `date`time xasc trades;
-(hsym `$basePath,"/data","/trades.csv") 0: csv 0: trades;
+(hsym `$basePath,"/Equities Trade Pipeline/data","/trades.csv") 0: csv 0: trades;
 show "trades.csv saved: ",string count trades;
 
 // --- 4. Generate orders.csv ---
@@ -113,11 +112,10 @@ orders: ([]
     limitPrice: o_base * 1 + (n_orders?1.0) * 0.04 - 0.02;
     qty: n_orders?(100 200 500 1000 2000 5000 10000);
     status: n_orders?`Filled`Filled`Filled`PartFill`Cancelled`New;
-    broker: n_orders?`GSCO`MSCO`JPMC`BOFA`CITI`BARC`UBS`CS
-  );
+    broker: n_orders?`GSCO`MSCO`JPMC`BOFA`CITI`BARC`UBS`CS);
 
 orders: `date`time xasc orders;
-(hsym `$basePath,"/data","/orders.csv") 0: csv 0: orders;
+(hsym `$basePath,"/Equities Trade Pipeline/data","/orders.csv") 0: csv 0: orders;
 show "orders.csv saved: ",string count orders;
 
 show "";

@@ -19,16 +19,16 @@ t_times: 09:30:00.000 + n_trades?23400000;
 condList: `N`N`N`N`N,(`$"@"),`F`O`T;  
 
 trades: ([]date: t_dates; 
-           tradeId: `$"TRD-",/:string til n_trades;
            time: t_times; 
            sym: t_syms; 
            price: t_mid + (n_trades?1.0) * 0.04 - 0.02; 
            size: n_trades?(100 200 300 500 1000 2000 5000); 
+           side: n_trades?`B`S;
            exchange: n_trades?`NYSE`NASDAQ`BATS`ARCA; 
+           tradeId: `$"TRD-",/:string til n_trades;
            orderId: `$"ORD-",/:string n_trades?n_orders; 
            condition: n_trades?condList; 
-           broker: n_trades?`GSCO`MSCO`JPMC`BOFA`CITI`BARC`UBS`CS;
-           side: n_trades?`B`S);
+           broker: n_trades?`GSCO`MSCO`JPMC`BOFA`CITI`BARC`UBS`CS);
 
 
 q_syms: n_quotes?syms;

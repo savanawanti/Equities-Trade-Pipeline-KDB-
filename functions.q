@@ -18,7 +18,6 @@ dedup: { [t]
   firstOccurence: `date`time xasc select by tradeId from sorted; 
   after: count firstOccurence;
   recordsEffected: before - after;
-  .log.info "Dedup: removed ", string[recordsEffected], " duplicates";
   0!firstOccurence
  }
 
@@ -30,7 +29,6 @@ fillNulls: {[t;col]
     result: ![t;();(enlist `sym)!(enlist `sym); (enlist col)! (enlist(fills;col))];
     result2: result[where not null result[col]];
     after: sum null result2[col];
-    .log.info "fillNulls: removed ", string[before-after], " fillNulls";
     :result2
  }
 
@@ -40,7 +38,6 @@ fixNegatives:{[t; col]
  before: sum t[col] < 0;
  result: ![t; (); 0b; (enlist col)!(enlist (abs; col))];
  after: sum result[col] < 0;
- .log.info "fixNeg: removed ", string[before-after], " fixNeg";
  :result
  }
 
@@ -50,7 +47,6 @@ removeZeroSize: {[t]
     before: count t;
     result: select from t where size <> 0;
     after: count result;
-    .log.info "removeZeroSize: removed ", string[before-after], " removeZeroSize";
     :result
  }
 
@@ -60,7 +56,6 @@ filterTradingHours: {[t]
     before: count t;
     result: select from t where time within 09:30:00.000 16:00:00.000;
     after: count result;
-    .log.info "filterTradingHours: removed ", string[before-after], " filterTradingHours";
     :result
  }
 

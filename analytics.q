@@ -2,7 +2,7 @@
 
 // Calculate VWAP for every sym on every date.
 
-aggerateResult: { result: select VWAP: size wavg price, totalVolumne:sum size, countTrade: count tradeId, highPrice: max price, lowPrice: min price    by date, sym from trades;
+aggerateResult: { result: select VWAP: size wavg price, totalVolume:sum size, countTrade: count tradeId, highPrice: max price, lowPrice: min price    by date, sym from trades;
  (hsym `$getenv[`HOME],"/Equities Trade Pipeline/reports/aggerateResult.csv") 0: csv 0: 0!result;
  :result }
 
