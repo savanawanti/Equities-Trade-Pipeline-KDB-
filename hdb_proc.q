@@ -39,3 +39,5 @@ maxDateq: exec max date from q;
 
 .hdb.getSyms:{[]
     exec distinct sym from select sym from trades}
+
+

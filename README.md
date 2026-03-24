@@ -1,6 +1,6 @@
 # Equities Trade Data Pipeline — KDB+/q
 
-An end-to-end equities trade data pipeline built entirely in KDB+/q, simulating a production-grade system used on trading desks at investment banks and hedge funds. The pipeline ingests raw market data from CSV feeds, validates and cleans it, stores it in a date-partitioned Historical Database (HDB), serves analytics queries, and extends into a multi-process IPC architecture with separate HDB, RDB, and Gateway processes.
+An end-to-end equities trade data pipeline built entirely in KDB+/q, simulating a production-grade system used on trading desks at investment banks and hedge funds. The project spans three levels: a batch data pipeline (Level 1), a multi-process IPC architecture (Level 2), and a full real-time tick architecture with tickerplant, feed handler, and complex event processing (Level 3).
 
 ---
 
@@ -38,38 +38,90 @@ An end-to-end equities trade data pipeline built entirely in KDB+/q, simulating 
            └───▶│    Gateway       │◀─────┘
                 │    (gw.q)        │
                 │    Port 5020     │
-                │                  │
-                │  .gw.get*()      │
-                │  Query routing   │
-                │  Error handling  │
-                └────────┬─────────┘
-                         │
-                    Traders / Quants
-                    connect here
+                └──────────────────┘
 ```
 
-**How it works:**
-- **HDB Process** loads the partitioned database from disk and serves historical queries via namespaced `.hdb.*` functions
-- **RDB Process** generates today's data in-memory (50K trades, 100K quotes) and serves real-time queries via `.rdb.*` functions
-- **Gateway** connects to both over IPC (TCP/IP), routes queries, combines results, and handles process failures gracefully
-- **EOD (End of Day):** `.rdb.eod` cleans and saves today's RDB data as a new HDB partition, then clears RDB memory
+### Level 3 — Full Tick Architecture
+
+```
+  ┌──────────────┐
+  │ Feed Handler │       Generates synthetic ticks on a timer
+  │  (feed.q)    │       Publishes to Tickerplant
+  │  No port     │
+  └──────┬───────┘
+         │ neg[h] (`upd; `trades; data)
+         ▼
+  ┌──────────────┐       Receives ticks from Feed Handler
+  │ Tickerplant  │       Logs every message to journal file
+  │  (tick.q)    │       Publishes to all subscribers
+  │  Port 5012   │
+  └──────┬───────┘
+         │
+         ├─────────────────────────────┐
+         │                             │
+         ▼                             ▼
+  ┌──────────────┐              ┌──────────────┐
+  │     RDB      │              │     CEP      │
+  │ (rdb_proc.q) │              │  (cep.q)     │
+  │  Port 5011   │              │  Port 5015   │
+  │              │              │              │
+  │ Subscribes   │              │ Subscribes   │
+  │ to TP        │              │ to TP        │
+  │ Accumulates  │              │ Incremental  │
+  │ today's data │              │ rolling stats│
+  │ EOD save     │              │ per symbol   │
+  └──────┬───────┘              └──────────────┘
+         │                             │
+         │ EOD: save partition         │
+         ▼                             │
+  ┌──────────────┐                     │
+  │   hdb/       │  On-disk            │
+  │  (partitions │  partitioned        │
+  │   on disk)   │  database           │
+  └──────┬───────┘                     │
+         │ \l hdb                      │
+         ▼                             │
+  ┌──────────────┐                     │
+  │  HDB Process │                     │
+  │ (hdb_proc.q) │                     │
+  │  Port 5010   │                     │
+  └──────────────┘                     │
+         │                             │
+         │    ┌──────────────────┐     │
+         └───▶│    Gateway       │◀────┘
+         ┌───▶│    (gw.q)        │
+         │    │    Port 5020     │
+     RDB─┘   └────────┬─────────┘
+                       │
+                  Traders / Quants
+                  connect here
+```
+
+**Data Flow:**
+1. Feed Handler generates trade and quote ticks every second
+2. Tickerplant receives ticks, appends to journal file, publishes to RDB and CEP
+3. RDB accumulates today's data in-memory
+4. CEP computes rolling statistics (max, min, count, volume) per symbol using incremental aggregation
+5. Gateway queries HDB (historical), RDB (today), and CEP (live stats), combining results
+6. At end of day, RDB saves data as a new HDB partition and clears memory
 
 **HDB Structure on Disk:**
 ```
 hdb/
-├── sym                          ← symbol enumeration file
+├── sym                          <- symbol enumeration file
 ├── 2025.01.02/
 │   ├── trades/
-│   │   ├── .d                   ← column order
-│   │   ├── sym                  ← enumerated (stored as ints)
-│   │   ├── time, price, size    ← binary column files
+│   │   ├── .d                   <- column order
+│   │   ├── sym                  <- enumerated (stored as ints)
+│   │   ├── time, price, size    <- binary column files
 │   │   └── ...
 │   └── quotes/
 │       └── ...
 ├── 2025.01.03/
 ├── 2025.01.04/
 ├── 2025.01.05/
-└── 2025.01.06/
+├── 2025.01.06/
+└── YYYY.MM.DD/                  <- new partitions added by EOD
 ```
 
 ---
@@ -78,20 +130,25 @@ hdb/
 
 | Table     | Rows      | Description                            | Key Columns                           |
 |-----------|-----------|----------------------------------------|---------------------------------------|
-| trades    | 1,000,000 | Equity trade executions                | tradeId, sym, price, size, side       |
-| quotes    | 2,000,000 | NBBO (National Best Bid/Offer) quotes  | sym, bid, ask, bsize, asize           |
-| orders    | 500,000   | Order submissions                      | orderId, sym, orderType, limitPrice   |
+| trades    | 1,000,000 | Equity trade executions (Level 1)      | tradeId, sym, price, size, side       |
+| quotes    | 2,000,000 | NBBO bid/ask quotes (Level 1)          | sym, bid, ask, bsize, asize           |
+| orders    | 500,000   | Order submissions (Level 1)            | orderId, sym, orderType, limitPrice   |
 | refdata   | 50        | Instrument reference data              | sym, sector, base_price, exchange     |
 
-**Coverage:** 50 symbols across Tech, Finance, Media, Crypto, Gaming, and Travel sectors over 5 trading days.
+**Coverage:** 50 symbols across Tech, Finance, Media, Crypto, Gaming, and Travel sectors.
 
-**Injected Data Quality Issues (cleaned in Phase 2):**
+**Level 1 Injected Data Quality Issues (cleaned in Phase 2):**
 - ~2% null prices in trades (~20,000 rows)
 - ~1% duplicate tradeIds (~5,000 rows)
 - ~0.5% zero-size trades (~5,000 rows)
 - ~2% null bids in quotes (~40,000 rows)
 - ~1% negative bid sizes in quotes (~20,000 rows)
 - ~0.5% out-of-hours timestamps in quotes (~10,000 rows)
+
+**Level 3 Live Data:**
+- Feed handler generates 50 trades + 50 quotes per second
+- RDB accumulates throughout the day
+- EOD saves to HDB as a new date partition
 
 ---
 
@@ -100,35 +157,46 @@ hdb/
 ```
 Equities Trade Pipeline/
 │
-├── run.q                ← Master orchestrator — runs full Level 1 pipeline
-├── log.q                ← Logging utility (.log.info, .log.warn, .log.err)
-├── dataGeneration.q     ← Generates 3.5M rows of synthetic market data
-├── load.q               ← CSV ingestion with type casting (0: operator)
-├── functions.q          ← Reusable cleaning functions (5 functions)
-├── clean.q              ← Data validation & cleaning pipeline
-├── hdb_build.q          ← Partitioned HDB construction
-├── rdb.q                ← RDB simulation + gateway query function (Level 1)
-├── analytics.q          ← VWAP, spreads, anomalies, exec quality, P&L
+│  --- Level 1: Batch Pipeline ---
+├── run.q                <- Master orchestrator (runs full Level 1 pipeline)
+├── log.q                <- Logging utility (.log.info, .log.warn, .log.err)
+├── dataGeneration.q     <- Generates 3.5M rows of synthetic market data
+├── load.q               <- CSV ingestion with type casting (0: operator)
+├── functions.q          <- Reusable cleaning functions (5 functions)
+├── clean.q              <- Data validation & cleaning pipeline
+├── hdb_build.q          <- Partitioned HDB construction
+├── analytics.q          <- VWAP, spreads, anomalies, exec quality, P&L
 │
-├── hdb_proc.q           ← Level 2: HDB process — serves .hdb.* queries (port 5010)
-├── rdb_proc.q           ← Level 2: RDB process — in-memory data, .rdb.* queries (port 5011)
-├── gw.q                 ← Level 2: Gateway — routes queries across HDB + RDB (port 5020)
-├── TCP_IP_testing.txt   ← Level 2: IPC learning notes and experiments
-├── rdb_execution on q server.txt  ← RDB execution log
+│  --- Level 2 & 3: Multi-Process Architecture ---
+├── sym.q                <- Shared table schema definitions (trades, quotes)
+├── tick.q               <- Tickerplant: pub/sub, journal, EOD trigger
+├── feed.q               <- Feed Handler: timer-based tick generation
+├── hdb_proc.q           <- HDB process: loads HDB, serves .hdb.* queries
+├── rdb_proc.q           <- RDB process: subscribes to TP, accumulates data, EOD save
+├── cep.q                <- CEP: incremental rolling analytics per symbol
+├── gw.q                 <- Gateway: routes queries across HDB + RDB + CEP
 │
-├── data/                ← Generated CSV files
+│  --- Reference & Logs ---
+├── rdb.q                <- Level 1 RDB simulation (standalone)
+├── TCP_IP_testing.txt   <- IPC learning notes and experiments
+├── rdb_execution on q server.txt  <- RDB execution log
+│
+│  --- Data & Output ---
+├── data/                <- Generated CSV files (Level 1)
 │   ├── trades.csv
 │   ├── quotes.csv
 │   ├── orders.csv
 │   └── refdata.csv
 │
-├── hdb/                 ← Partitioned Historical Database
+├── hdb/                 <- Partitioned Historical Database
 │   ├── sym
 │   └── YYYY.MM.DD/
 │       ├── trades/
 │       └── quotes/
 │
-├── reports/             ← Analytics output (CSV)
+├── tick/                <- Journal files (one per day)
+│
+├── reports/             <- Analytics output (CSV)
 │   ├── aggerateResult.csv
 │   ├── ExecutionQuality.csv
 │   └── PLReport.csv
@@ -136,22 +204,88 @@ Equities Trade Pipeline/
 └── README.md
 ```
 
-**Dependency Chain:**
+---
+
+## How to Run
+
+**Prerequisites:** KDB+ 4.x (KX Academy sandbox or local install)
+
+### Level 1 — Full Batch Pipeline
+```bash
+cd ~/Equities\ Trade\ Pipeline
+q run.q
 ```
-Level 1 (batch):                  Level 2 (multi-process):
-q run.q                           Terminal 1: q hdb_proc.q -p 5010
-  ├── log.q                       Terminal 2: q rdb_proc.q -p 5011
-  ├── dataGeneration.q            Terminal 3: q gw.q -p 5020
-  └── analytics.q                 Terminal 4: client connects to 5020
-        └── hdb_build.q
-              └── clean.q
-                    ├── functions.q
-                    └── load.q
+
+This runs the full pipeline:
+1. Generates 3.5M rows of synthetic market data
+2. Loads and cleans data (removes ~100K dirty records)
+3. Builds date-partitioned HDB with sym enumeration
+4. Runs analytics and exports CSV reports to `reports/`
+
+### Level 3 — Full Tick Architecture
+
+Launch each process in a **separate terminal**. Order matters — upstream processes must be running before downstream processes connect.
+
+```bash
+# Terminal 1: HDB process (loads partitioned database)
+cd ~/Equities\ Trade\ Pipeline
+q hdb_proc.q -p 5010
+
+# Terminal 2: Tickerplant (pub/sub hub + journal)
+cd ~/Equities\ Trade\ Pipeline
+q tick.q -p 5012
+
+# Terminal 3: RDB (subscribes to TP, accumulates today's data)
+cd ~/Equities\ Trade\ Pipeline
+q rdb_proc.q -p 5011
+
+# Terminal 4: CEP (subscribes to TP, computes rolling stats)
+cd ~/Equities\ Trade\ Pipeline
+q cep.q -p 5015
+
+# Terminal 5: Gateway (connects to HDB + RDB + CEP)
+cd ~/Equities\ Trade\ Pipeline
+q gw.q -p 5020
+
+# Terminal 6: Feed Handler (starts generating ticks)
+cd ~/Equities\ Trade\ Pipeline
+q feed.q
+
+# Terminal 7: Client (connect and query)
+cd ~/Equities\ Trade\ Pipeline
+q
+h: hopen 5020
+h (`.gw.getTradesBySym; `AAPL)
+h (`.gw.getVWAP; `AAPL)
+h (`.gw.getSyms; ::)
+h (`.gw.getDates; ::)
+h (`.gw.getRowCounts; ::)
+h (`.gw.getStats; ::)
+```
+
+### End-of-Day Process
+```q
+/ On the Tickerplant terminal:
+.u.end[]
+
+/ This triggers:
+/ 1. RDB saves today's data as new HDB partition
+/ 2. RDB clears in-memory tables
+/ 3. Journal is closed and new one opened
+/ 4. RDB starts accumulating fresh data from feed
 ```
 
 ---
 
-## Level 2 — API Reference
+## API Reference
+
+### Tickerplant (Port 5012)
+
+| Function         | Description                                    | Called By       |
+|------------------|------------------------------------------------|-----------------|
+| `upd[t;data]`    | Receive ticks, log to journal, publish to subs | Feed Handler    |
+| `.u.sub[t]`      | Register subscriber for a table                | RDB, CEP        |
+| `.u.end[d]`      | Trigger end-of-day on all subscribers           | Manual / Timer  |
 
 ### HDB Process (Port 5010)
 
@@ -168,6 +302,7 @@ q run.q                           Terminal 1: q hdb_proc.q -p 5010
 
 | Function                     | Description                                | Parameters     |
 |------------------------------|--------------------------------------------|----------------|
+| `upd[t;data]`                | Insert incoming ticks (called by TP)       | table, data    |
 | `.rdb.getTradesBySym[s]`     | Today's trades for a symbol                | sym            |
 | `.rdb.getQuotesBySym[s]`     | Today's quotes for a symbol                | sym            |
 | `.rdb.getVWAP[s]`           | Today's VWAP for a symbol                  | sym            |
@@ -175,7 +310,20 @@ q run.q                           Terminal 1: q hdb_proc.q -p 5010
 | `.rdb.getSyms[]`            | All distinct symbols in RDB                | none           |
 | `.rdb.getRowCounts[]`       | Trade and quote row counts                  | none           |
 | `.rdb.insertTrade[data]`    | Insert new trade rows                       | table data     |
-| `.rdb.eod[]`                | End-of-day: clean, save to HDB, clear RDB  | none           |
+| `.rdb.end[]`                | End-of-day: save to HDB, clear memory      | none           |
+| `.u.end[d]`                 | Called by TP to trigger EOD                  | date           |
+
+### CEP Process (Port 5015)
+
+| Function         | Description                                         | Parameters     |
+|------------------|-----------------------------------------------------|----------------|
+| `upd[t;data]`    | Process incoming ticks, update rolling stats         | table, data    |
+| `stats`          | Combined trade + quote stats (global variable)       | query directly |
+
+**CEP Rolling Stats:**
+- Trade stats per sym: max price, min price, total trades, total volume
+- Quote stats per sym: max bid, min ask, total quotes, latest spread
+- Stats update incrementally with each tick batch using the `+:` operator
 
 ### Gateway (Port 5020)
 
@@ -187,11 +335,13 @@ q run.q                           Terminal 1: q hdb_proc.q -p 5010
 | `.gw.getSyms[]`            | Union of all symbols from HDB + RDB               | none           |
 | `.gw.getDates[]`           | All dates (HDB partitions + today)                 | none           |
 | `.gw.getRowCounts[]`       | Total row counts across both processes             | none           |
+| `.gw.getStats[]`           | Live CEP rolling stats                             | none           |
+| `.gw.getStatsBySym[s]`    | CEP stats for a specific symbol                    | sym            |
 | `.gw.reconnect[]`          | Check and reconnect stale/dead handles             | none           |
 
 ---
 
-## Cleaning Functions
+## Cleaning Functions (Level 1)
 
 | Function             | Description                                              | Approach                    |
 |----------------------|----------------------------------------------------------|-----------------------------|
@@ -202,11 +352,11 @@ q run.q                           Terminal 1: q hdb_proc.q -p 5010
 | `removeZeroSize`     | Drop zero-size trades                                    | `select where`              |
 | `filterTradingHours` | Keep only 09:30-16:00 records                            | `within` keyword            |
 
-`fillNulls` and `fixNegatives` use **functional form** (`!` with 4 args) for dynamic column names — a key production KDB+ pattern.
+`fillNulls` and `fixNegatives` use **functional form** (`!` with 4 args) for dynamic column names.
 
 ---
 
-## Analytics
+## Analytics (Level 1)
 
 | Analysis               | Description                                            | Key q Features Used          |
 |------------------------|--------------------------------------------------------|------------------------------|
@@ -225,6 +375,7 @@ q run.q                           Terminal 1: q hdb_proc.q -p 5010
 - Functional form for `update` and `select` (`!` and `?` with 4 args)
 - Vector conditionals, `each`, `fills`, `within`, `xbar`, `wavg`
 - Logging with `.z.T` timestamps and namespaces
+- Closures and projections for passing variables into `each` iterations
 
 **qSQL**
 - `select`, `update`, `exec`, `delete` with `by` and `where`
@@ -235,18 +386,24 @@ q run.q                           Terminal 1: q hdb_proc.q -p 5010
 - Date-partitioned HDB with splayed tables
 - Symbol enumeration with `.Q.en` (enumerates all symbol columns, not just sym)
 - `sym` file management (shared across tables)
-- RDB simulation in `.rdb` namespace
-- Gateway query pattern (RDB + HDB combined)
 - Sorted attributes (`s#`) on sym column
 
 **IPC & Multi-Process Architecture (Level 2)**
 - Separate HDB, RDB, and Gateway processes on dedicated ports
-- TCP/IP communication via `hopen` (sync and async)
+- TCP/IP communication via `hopen` (synchronous and asynchronous)
 - Protected evaluation (`@[hopen; port; errorHandler]`) for resilient connections
 - Namespaced API design (`.hdb.*`, `.rdb.*`, `.gw.*`)
 - Gateway query routing — combines results from multiple processes
 - Stale handle detection and automatic reconnection (`.gw.reconnect`)
-- End-of-day lifecycle — RDB cleans, saves to HDB partition, clears memory
+
+**Tick Architecture (Level 3)**
+- Tickerplant with publish/subscribe pattern (`.u.sub`, `.u.w`)
+- Journal file for crash recovery — every tick logged to disk before publishing
+- Feed handler with timer-based tick generation (`.z.ts`)
+- RDB subscribes to TP via `.u.sub`, accumulates data via `upd`
+- CEP with incremental aggregation using `+:` operator — rolling stats without storing raw data
+- End-of-day lifecycle — TP triggers `.u.end`, RDB saves to HDB partition, clears memory
+- Gateway connects to HDB, RDB, and CEP — single query entry point
 
 **Advanced Joins**
 - `lj` — Left join (refdata enrichment)
@@ -271,65 +428,11 @@ q run.q                           Terminal 1: q hdb_proc.q -p 5010
 ### .hdb.getSyms Queries Data, Not the Sym File
 `.hdb.getSyms` is implemented as `exec distinct sym from select sym from trades` rather than reading the sym file directly with `get`. The query approach only returns symbols that actually exist in the trade data, while reading the sym file would return every symbol ever enumerated — including values from other columns like broker codes and exchange names.
 
----
+### Tickerplant upd Naming Convention
+All subscriber processes (RDB, CEP) define their own local `upd` function. The Tickerplant publishes `neg[h] (`upd; t; data)` to each subscriber, which invokes the subscriber's own `upd` — not the TP's. Same function name, different processes, different implementations. The TP's `upd` logs and publishes. The RDB's `upd` inserts rows. The CEP's `upd` computes incremental stats.
 
-## How to Run
-
-**Prerequisites:** KDB+ 4.x (KX Academy sandbox or local install)
-
-### Level 1 — Full Batch Pipeline
-```bash
-cd ~/Equities\ Trade\ Pipeline
-q run.q
-```
-
-This runs the full pipeline:
-1. Generates 3.5M rows of synthetic market data
-2. Loads and cleans data (removes ~100K dirty records)
-3. Builds date-partitioned HDB with sym enumeration
-4. Runs analytics and exports CSV reports to `reports/`
-
-### Level 2 — IPC Multi-Process Architecture
-
-Launch each process in a **separate terminal** (order matters):
-
-```bash
-# Terminal 1: Start HDB process (loads partitioned database)
-q hdb_proc.q -p 5010
-
-# Terminal 2: Start RDB process (generates today's in-memory data)
-q rdb_proc.q -p 5011
-
-# Terminal 3: Start Gateway (connects to HDB + RDB)
-q gw.q -p 5020
-
-# Terminal 4: Client — connect and query
-q
-h: hopen 5020
-h (`.gw.getTradesBySym; `AAPL)
-h (`.gw.getVWAP; `AAPL)
-h (`.gw.getSyms; ::)
-h (`.gw.getDates; ::)
-h (`.gw.getRowCounts; ::)
-```
-
-### End-of-Day Process
-```q
-// From client connected to RDB (port 5011):
-h: hopen 5011
-h (`.rdb.eod; ::)          // RDB cleans, saves to HDB, clears memory
-
-// Then tell HDB to reload:
-hdb: hopen 5010
-hdb "\\l hdb"               // HDB picks up the new partition
-```
-
-### Interactive queries after loading HDB:
-```q
-\l hdb
-select avg price by sym from trades where date = 2025.01.02
-select count i by date from quotes
-```
+### CEP Incremental Aggregation
+CEP uses the `+:` operator on keyed tables for incremental stat updates. When a new batch arrives, `+:` merges the batch stats into the running totals — `max` keeps the running maximum, `sum` and `count` accumulate. This means CEP can handle unlimited data volume without growing memory, since it only stores aggregated stats, never raw ticks.
 
 ---
 
@@ -337,9 +440,11 @@ select count i by date from quotes
 
 If this were a production system, the following enhancements would be made:
 
-- **Tickerplant integration** — replace CSV ingestion with real-time pub/sub tick capture
-- **Journal-based recovery** — log all messages for RDB crash recovery
-- **CEP (Complex Event Processing)** — real-time rolling analytics engine
+- **HDB auto-reload on EOD** — HDB process automatically reloads after RDB saves new partition
+- **Journal replay** — RDB replays journal file on restart to recover mid-day state (`-11!`)
+- **Symbol-level filtering** — `.u.sub` interface supports symbol lists; TP would filter before publishing
+- **Timer-based batching** — TP buffers ticks and publishes in batches to reduce IPC overhead
+- **Chained tickerplant** — fan-out to slow subscribers without impacting primary TP
 - **Incremental HDB builds** — only write new date partitions, skip existing ones
 - **Parallel processing** — use `peach` for multi-threaded partition writes
 - **Compression** — enable column compression for HDB storage savings
