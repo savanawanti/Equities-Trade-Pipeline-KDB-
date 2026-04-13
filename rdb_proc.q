@@ -12,6 +12,17 @@ upd:{[t;x]
     t insert x
  }
 
+.rdb.journalRecover:{[]
+    jpath: `$":tick/",string .z.D;
+    journal: @[get; jpath; {[e] ()}];
+    {upd[x 0; x 1]} each journal;
+    .log.info "Recovered - trades: ",string[count trades]," quotes: ",string[count quotes];
+ }
+
+
+.rdb.journalRecover[]
+
+
 
 
 .log.info "Number of rows in Trades: ",string[count trades];
