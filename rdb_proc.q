@@ -35,7 +35,7 @@ upd:{[t;x]
     select from quotes where sym = s}
 
 .rdb.getVWAP:{[s]
-    select size wavg price, totalVolume: sum size, numoftrades: count i by date, sym from trades where sym=s }
+    select VWAP: size wavg price, totalVolume: sum size, numoftrades: count i by sym from trades where sym=s }
 
 .rdb.getDate:{[]
     exec distinct date from trades }

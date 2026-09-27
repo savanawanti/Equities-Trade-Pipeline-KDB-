@@ -14,7 +14,7 @@ if[not () ~ key .u.jpath;
 // symlist is for filter option not implemented at.
 
 .u.sub:{[tableName] 
-    .u.w[tableName],: .z.w;
+    .u.w[tableName]: distinct .u.w[tableName], .z.w;
     :(tableName; value tableName)
  }
 
@@ -25,11 +25,14 @@ upd:{[table;data]
     {[table;data;h] neg[h] (`upd;table;data)}[table;data] each .u.w[table];
  }
 
+.z.pc:{[h]
+    .u.w: (.u.w except\: h)
+ }
+
+
 .u.end:{[]
     allSubs: distinct raze value .u.w;
     {[h] neg[h] (`.u.end;.z.D)} each allSubs;
     .u.jpath: `$":tick/",string .z.D;
+    .u.journal:();
  }
-
-
-
